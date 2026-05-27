@@ -93,6 +93,42 @@ exports.profile = async (req, res) => {
   }
 };
 
+
+exports.discoverUsers = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+
+    const users = await User.findAll({
+      where: {
+        id: { [Op.ne]: currentUserId }
+      },
+      attributes: ["id", "username", "email", "is_admin", "created_at"]
+    });
+
+    const following = await Follow.findAll({
+      where: { seguidor_id: currentUserId },
+      attributes: ["seguido_id"]
+    });
+
+    const followingIds = new Set(following.map((item) => item.seguido_id));
+
+    res.json(
+      users.map((user) => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        is_admin: user.is_admin,
+        created_at: user.created_at,
+        is_following: followingIds.has(user.id)
+      }))
+    );
+  } catch (err) {
+    console.error("Discover users error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 exports.follow = async (req, res) => {
   try {
     const seguidor_id = req.user.id;
