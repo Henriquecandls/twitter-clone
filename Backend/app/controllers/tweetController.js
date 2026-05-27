@@ -3,19 +3,7 @@ const { Tweet, User, Comment, Like, Follow } = require("../sequelize");
 const tweetController = {
   getFeed: async (req, res) => {
     try {
-      const userId = req.user.id;
-      const following = await Follow.findAll({
-        where: { seguidor_id: userId },
-        attributes: ['seguido_id']
-      });
-
-      const followedIds = following.map(item => item.seguido_id);
-      if (followedIds.length === 0) {
-        return res.json([]);
-      }
-
       const tweets = await Tweet.findAll({
-        where: { utilizador_id: followedIds },
         order: [['created_at', 'DESC']],
         include: [
           { model: User, as: 'autor', attributes: ['id', 'username'] },
@@ -27,7 +15,7 @@ const tweetController = {
           { model: Like, as: 'likes' }
         ]
       });
-
+  
       res.json(tweets);
     } catch (error) {
       console.error('Feed error:', error);
