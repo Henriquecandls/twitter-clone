@@ -2,6 +2,7 @@
   "name": "twitter",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://Henriquecandls.github.io/twitter-clone",
   "type": "module",
   "scripts": {
     "dev": "vite",

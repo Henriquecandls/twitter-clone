@@ -9,13 +9,16 @@ export function FeedPage() {
   const [tweets, setTweets] = useState<Tweet[]>([]);
 
   const loadFeed = useCallback(async () => {
-    const { data } = await api.get("/feed");
+    const token = localStorage.getItem("token");
+  
+    const { data } = await api.get("/feed", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  
     setTweets(data);
   }, []);
-
-  useEffect(() => {
-    loadFeed();
-  }, [loadFeed]);
 
   return (
     <Layout>
