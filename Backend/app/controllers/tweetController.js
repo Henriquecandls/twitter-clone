@@ -1,18 +1,25 @@
-const { Tweet, User, Comment, Like, Follow } = require("../sequelize");
+const { Tweet, User, Comment, Like } = require("../sequelize");
+
+const tweetIncludes = [
+  { model: User, as: "autor", attributes: ["id", "username"] },
+  {
+    model: Comment,
+    as: "comments",
+    include: [{ model: User, as: "autor", attributes: ["id", "username"] }]
+  },
+  {
+    model: Like,
+    as: "likes",
+    attributes: ["utilizador_id", "tweet_id", "created_at"]
+  }
+];
 
 const tweetController = {
   getFeed: async (req, res) => {
     try {
       const tweets = await Tweet.findAll({
         order: [["created_at", "DESC"]],
-        include: [
-          { model: User, as: "autor", attributes: ["id", "username"] },
-          {
-            model: Comment,
-            as: "comments",
-            include: [{ model: User, as: "autor", attributes: ["id", "username"] }]
-          }
-        ]
+        include: tweetIncludes
       });
 
       res.json(tweets);
@@ -53,16 +60,13 @@ const tweetController = {
 
       const tweets = await Tweet.findAll({
         order: [["created_at", "DESC"]],
-        include: [
-          { model: User, as: "autor", attributes: ["id", "username"] },
-          { model: Comment, as: "comments" }
-        ]
+        include: tweetIncludes
       });
 
       res.json(tweets);
     } catch (error) {
       console.error("List all tweets error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   },
 
@@ -140,7 +144,7 @@ const tweetController = {
       res.json({ message: "Tweet liked" });
     } catch (error) {
       console.error("Like tweet error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   },
 
@@ -159,7 +163,7 @@ const tweetController = {
       res.json({ message: "Like removed" });
     } catch (error) {
       console.error("Unlike tweet error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   },
 
@@ -168,8 +172,8 @@ const tweetController = {
       const tweetId = Number(req.params.id);
       const { conteudo } = req.body;
 
-      if (!conteudo) {
-        return res.status(400).json({ message: "conteudo is required" });
+      if (!conteudo || conteudo.length > 280) {
+        return res.status(400).json({ message: "Comentário inválido." });
       }
 
       const tweet = await Tweet.findByPk(tweetId);
@@ -186,21 +190,14 @@ const tweetController = {
       res.status(201).json(comment);
     } catch (error) {
       console.error("Add comment error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   },
 
   getTweetById: async (req, res) => {
     try {
       const tweet = await Tweet.findByPk(Number(req.params.id), {
-        include: [
-          { model: User, as: "autor", attributes: ["id", "username"] },
-          {
-            model: Comment,
-            as: "comments",
-            include: [{ model: User, as: "autor", attributes: ["id", "username"] }]
-          }
-        ]
+        include: tweetIncludes
       });
 
       if (!tweet) {
@@ -209,7 +206,8 @@ const tweetController = {
 
       return res.json(tweet);
     } catch (error) {
-      return res.status(500).json({ message: "Erro interno." });
+      console.error("Get tweet error:", error);
+      return res.status(500).json({ message: error.message });
     }
   },
 
@@ -223,7 +221,7 @@ const tweetController = {
 
       return res.json(comments);
     } catch (error) {
-      return res.status(500).json({ message: "Erro interno." });
+      return res.status(500).json({ message: error.message });
     }
   },
 
@@ -248,7 +246,7 @@ const tweetController = {
       await comment.update({ conteudo: req.body.conteudo });
       return res.json(comment);
     } catch (error) {
-      return res.status(500).json({ message: "Erro interno." });
+      return res.status(500).json({ message: error.message });
     }
   },
 
@@ -269,7 +267,7 @@ const tweetController = {
       await comment.destroy();
       return res.json({ message: "Comentário removido." });
     } catch (error) {
-      return res.status(500).json({ message: "Erro interno." });
+      return res.status(500).json({ message: error.message });
     }
   }
 };
